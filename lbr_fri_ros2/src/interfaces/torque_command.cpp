@@ -4,7 +4,7 @@ namespace lbr_fri_ros2 {
 TorqueCommandInterface::TorqueCommandInterface(
     const double &joint_position_tau, const CommandGuardParameters &command_guard_parameters,
     const std::string &command_guard_variant)
-    : BaseCommandInterface(joint_position_tau, command_guard_parameters, command_guard_variant), accum_(0.0) {}
+    : BaseCommandInterface(joint_position_tau, command_guard_parameters, command_guard_variant), accum_(0.0), steps_(0) {}
 
 void TorqueCommandInterface::buffered_command_to_fri(fri_command_t_ref command,
                                                      const_idl_state_t_ref state) {
@@ -58,14 +58,21 @@ void TorqueCommandInterface::buffered_command_to_fri(fri_command_t_ref command,
   // Implements dithering to trigger the friction observer.
   // If the physical robot is at the commanded positions, KUKA turns off friction
   // compensation.
-  accum_ += 0.01; // known issue: not sample frequency aware
-  accum_ = fmod(accum_, M_PI*2.0); // keeps the value small
+  steps_ += 1;
+  if(steps_ > 1000) {
+    steps_ = 1000;
+  }
 
-  double delta = 0.01*std::sin(accum_); // original implementation is 0.1
+  if(steps_ == 1000) {
+    accum_ += 0.01; // known issue: not sample frequency aware
+    accum_ = fmod(accum_, M_PI*2.0); // keeps the value small
 
-  for(int i = 0; i < 7; i++) {
-    command_.joint_position[i] += delta;
-    //RCLCPP_INFO_STREAM(rclcpp::get_logger(LOGGER_NAME()), ColorScheme::OKCYAN << "joint " << i << " = " << command_.joint_position[i] << ColorScheme::ENDC);
+    double delta = 0.01*std::sin(accum_); // original implementation is 0.1
+
+    for(int i = 0; i < 7; i++) {
+      command_.joint_position[i] += delta;
+      //RCLCPP_INFO_STREAM(rclcpp::get_logger(LOGGER_NAME()), ColorScheme::OKCYAN << "joint " << i << " = " << command_.joint_position[i] << ColorScheme::ENDC);
+    }
   }
 
   // validate

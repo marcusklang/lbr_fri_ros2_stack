@@ -10,6 +10,7 @@ class TorqueCommandInterface : public BaseCommandInterface {
 protected:
   std::string LOGGER_NAME() const override { return "lbr_fri_ros2::TorqueCommandInterface"; }
   double accum_;
+  uint64_t steps_;
 public:
   TorqueCommandInterface() = delete;
   TorqueCommandInterface(const double &joint_position_tau,
