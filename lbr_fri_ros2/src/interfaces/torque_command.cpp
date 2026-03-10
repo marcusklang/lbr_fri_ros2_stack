@@ -4,7 +4,7 @@ namespace lbr_fri_ros2 {
 TorqueCommandInterface::TorqueCommandInterface(
     const double &joint_position_tau, const CommandGuardParameters &command_guard_parameters,
     const std::string &command_guard_variant)
-    : BaseCommandInterface(joint_position_tau, command_guard_parameters, command_guard_variant) {}
+    : BaseCommandInterface(joint_position_tau, command_guard_parameters, command_guard_variant), accum_(0.0) {}
 
 void TorqueCommandInterface::buffered_command_to_fri(fri_command_t_ref command,
                                                      const_idl_state_t_ref state) {
@@ -52,6 +52,22 @@ void TorqueCommandInterface::buffered_command_to_fri(fri_command_t_ref command,
     throw std::runtime_error(err);
   }
 
+  // write the measured joint position to joint position
+  command_.joint_position = state.measured_joint_position;
+
+  // Implements dithering to trigger the friction observer.
+  // If the physical robot is at the commanded positions, KUKA turns off friction
+  // compensation.
+  accum_ += 0.01; // known issue: not sample frequency aware
+  accum_ = fmod(accum_, M_PI*2.0); // keeps the value small
+
+  double delta = 0.01*std::sin(accum_); // original implementation is 0.1
+
+  for(int i = 0; i < 7; i++) {
+    command_.joint_position[i] += delta;
+    //RCLCPP_INFO_STREAM(rclcpp::get_logger(LOGGER_NAME()), ColorScheme::OKCYAN << "joint " << i << " = " << command_.joint_position[i] << ColorScheme::ENDC);
+  }
+
   // validate
   if (!command_guard_->is_valid_command(command_, state)) {
     std::string warn = "Overriding invalid command to neutral command.";
@@ -59,6 +75,7 @@ void TorqueCommandInterface::buffered_command_to_fri(fri_command_t_ref command,
                        ColorScheme::WARNING << warn.c_str() << ColorScheme::ENDC);
     neutralize_command_(state, command_);
   }
+
   // write joint position and torque to output
   command.setJointPosition(command_.joint_position.data());
   command.setTorque(command_.torque.data());

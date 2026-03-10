@@ -116,6 +116,7 @@ def generate_launch_description() -> LaunchDescription:
                     "estimated_wrench_interface",
                     "lbr_state_broadcaster",
                     "force_torque_broadcaster",
+                    "cartesian_impedance_controller", # new controller
                     LaunchConfiguration("ctrl"),
                 ],
                 namespace=LaunchConfiguration("namespace"),

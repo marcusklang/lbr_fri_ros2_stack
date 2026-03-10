@@ -2,7 +2,7 @@
 # managers regardless of their namespace. Usefull in multi-robot setups.
 /**/controller_manager:
   ros__parameters:
-    update_rate: 100
+    update_rate: 1000
     enforce_command_limits: true # can be removed from Kilted onward
 
     # ROS 2 control broadcasters
@@ -41,6 +41,9 @@
 
     twist_controller:
       type: lbr_ros2_control/TwistController
+
+    cartesian_impedance_controller:
+      type: cartesian_impedance_controller/CartesianImpedanceController
 
 # ROS 2 control broadcasters
 /**/force_torque_broadcaster:
@@ -147,4 +150,67 @@
       max_angular_velocity: 0.2 # maximum angular velocity
       joint_gains: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # joint gains
       cartesian_gains: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # cartesian gains
-    timeout: 0.2 # zeros the twist command when no command is received within timeout [s]
+    timeout: 0.2 # stop controller if no command is received within this time [s]
+
+/**/cartesian_impedance_controller:
+  ros__parameters:
+   type: cartesian_impedance_controller/CartesianImpedanceController
+   joints:
+      - lbr_A1
+      - lbr_A2
+      - lbr_A3
+      - lbr_A4
+      - lbr_A5
+      - lbr_A6
+      - lbr_A7
+   end_effector: lbr_link_ee
+   update_frequency: 1000.0
+   handle_trajectories: true
+   command_current_joint_pos: false
+   robot_description: "robot_description"
+   wrench_ee_frame: lbr_link_ee
+   delta_tau_max: 1.0
+ 
+   damping:
+     translation:
+       x: 1.0
+       y: 1.0
+       z: 1.0
+     rotation:
+       x: 1.0
+       y: 1.0
+       z: 1.0
+     nullspace_damping: 1.0
+     update_damping_factors: false
+ 
+   stiffness:
+     translation:
+       x: 440.0
+       y: 440.0
+       z: 440.0
+     rotation:
+       x: 40.0
+       y: 40.0
+       z: 40.0
+     nullspace_stiffness: 0.0
+     update_stiffness: false
+ 
+   wrench:
+     apply_wrench: false
+     force_x: 0.0
+     force_y: 0.0
+     force_z: 0.0
+     torque_x: 0.0
+     torque_y: 0.0
+     torque_z: 0.0
+ 
+   filtering:
+     nullspace_config: 0.1
+     pose: 0.1
+     stiffness: 0.1
+     wrench: 1.0
+ 
+   verbosity:
+     verbose_print: false
+     state_msgs: true
+     tf_frames: true

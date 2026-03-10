@@ -27,7 +27,7 @@ class LBRROS2ControlMixin:
     def arg_ctrl() -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
             name="ctrl",
-            default_value="joint_trajectory_controller",
+            default_value="cartesian_impedance_controller",
             description="Desired default controller. One of specified in ctrl_cfg.",
             choices=[
                 "admittance_controller",
@@ -37,6 +37,7 @@ class LBRROS2ControlMixin:
                 "lbr_torque_command_controller",
                 "lbr_wrench_command_controller",
                 "twist_controller",
+                "cartesian_impedance_controller"
             ],
         )
 
